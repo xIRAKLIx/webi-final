@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Blog = require('../models/blog');
 
-
 const requireAuth = (req, res, next) => {
     if (req.session.user) {
         next()
@@ -13,12 +12,20 @@ const requireAuth = (req, res, next) => {
 }
 
 router.get('/', requireAuth, async function (req, res, next) {
-    const blogs = await Blog.find({});
-    blogs.reverse()
+    try {
+        const blogs = await Blog.find({});
+        blogs.reverse();
 
-    const email = req.session.user.email;
+        if (blogs.length === 0) {
+            return res.redirect('/noBlogs');
+        }
 
-    res.render('blogs', {blogs, email});
+        const email = req.session.user.email;
+        res.render('blogs', { blogs, email });
+    } catch (err) {
+        console.log(err);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 router.get('/new', requireAuth, function (req, res, next) {
@@ -178,3 +185,4 @@ router.post('/:blogId/comment/:commentId/reply', requireAuth, async function (re
 });
 
 module.exports = router;
+
